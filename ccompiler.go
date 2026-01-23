@@ -44,7 +44,7 @@ func main() {
 	}
 	tks, err := lexer(s + ".cl")
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		return
 	}
 	if info {
@@ -55,7 +55,7 @@ func main() {
 	}
 	pst, err := parser(tks)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Error:", err)
 		return
 	}
 	if info {

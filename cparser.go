@@ -10,13 +10,15 @@ const (
 	_ Symbol = iota
 	PROGRAM
 	BLOCK
+	ELEMENT
 	COMMENT
 )
 
-var ss []string = []string{
+var ss [5]string = [5]string{
 	"",
 	"PROGRAM",
 	"BLOCK",
+	"ELEMENT",
 	"COMMENT",
 }
 
@@ -41,13 +43,6 @@ var itm map[byte]string = map[byte]string{
 	'N': "Number",
 }
 
-func current() Infoer {
-	if lex[lex_i] == nil {
-		return nil
-	}
-	return lex[lex_i]
-}
-
 func move() {
 	lex_i++
 }
@@ -56,8 +51,8 @@ func match(c byte) (Infoer, error) {
 	if lex[lex_i] == nil {
 		return nil, fmt.Errorf("Reached EOF")
 	}
-	if current().info()[0] != c {
-		return nil, fmt.Errorf("Expected %s, got %s", itm[c], current().info())
+	if lex[lex_i].info()[0] != c {
+		return nil, fmt.Errorf("Expected %s, got %s", itm[c], lex[lex_i].info()[1:])
 	}
 	v := lex[lex_i]
 	move()
@@ -66,35 +61,76 @@ func match(c byte) (Infoer, error) {
 
 func program(n *Node) error {
 	n.v = PROGRAM
+	if lex[lex_i] == nil {
+		return nil
+	}
 	n.c = []*Node{{}, {}}
 	err := block(n.c[0])
 	if err != nil {
 		return err
 	}
-	if current() != nil {
-		return program(n.c[1])
-	}
-	n.c[1].v = PROGRAM
-	n.c[1].c = nil
-	return nil
+	return program(n.c[1])
 }
 
 func block(n *Node) error {
 	n.v = BLOCK
+	if lex[lex_i] == nil {
+		return nil
+	}
+	if lex[lex_i].info()[1] == '}' {
+		return nil
+	}
+	n.c = []*Node{{}, {}}
+	err := element(n.c[0])
+	if err != nil {
+		val, err := match('S')
+		if err != nil {
+			return err
+		}
+		if val.info()[1] != '{' {
+			return fmt.Errorf("Expected ELEMENT or {, got %s", val.info()[1:])
+		}
+		n.c = []*Node{{val, nil}, {}, {}, {}}
+		err = block(n.c[1])
+		if err != nil {
+			return err
+		}
+		val, err = match('S')
+		if err != nil {
+			return err
+		}
+		if val.info()[1] != '}' {
+			return fmt.Errorf("Expected }, got %s", val.info()[1:])
+		}
+		n.c[2] = &Node{val, nil}
+		return block(n.c[3])
+	}
+	return block(n.c[1])
+}
+
+func element(n *Node) error {
+	n.v = ELEMENT
 	val, err := match('S')
 	if err != nil {
-		n.c = []*Node{{current(), nil}}
+		if lex[lex_i] == nil {
+			return err
+		}
+		n.c = []*Node{{lex[lex_i], nil}}
 		move()
 		return nil
 	}
-	if (val.info()[1] != '[') {
-		return fmt.Errorf("Expected [, Identity or Number, got %s", current().info())
+	if val.info()[1] != '[' {
+		lex_i--
+		return fmt.Errorf("Expected [, Identity or Number, got %s", val.info()[1:])
 	}
 	n.c = []*Node{{val, nil}, {}, {}}
 	comment(n.c[1])
 	val, err = match('S')
-	if err != nil || val.info()[1] != ']' {
-		return fmt.Errorf("Expected ], got %s", current().info())
+	if err != nil {
+		return err
+	}
+	if val.info()[1] != ']' {
+		return fmt.Errorf("Expected ], got %s", val.info()[1:])
 	}
 	*n.c[2] = Node{val, nil}
 	return nil
@@ -102,10 +138,10 @@ func block(n *Node) error {
 
 func comment(n *Node) {
 	n.v = COMMENT
-	if current().info()[1] == ']' {
+	if lex[lex_i].info()[1] == ']' {
 		return
 	}
-	n.c = []*Node{{current(), nil}, {}}
+	n.c = []*Node{{lex[lex_i], nil}, {}}
 	move()
 	comment(n.c[1])
 }

@@ -5,8 +5,18 @@ import (
 	"os"
 )
 
-func printCall(asm *os.File, n *Node, k uint32) {
+var k uint32
+var asm *os.File
+
+func printCall(n *Node) {
 	if n.c == nil {
+		return
+	}
+	if len(n.c) != 2 {
+		if len(n.c) == 4 {
+			printCall(n.c[1])
+			printCall(n.c[3])
+		}
 		return
 	}
 	fmt.Fprintln(asm, "    pushq %rbp")
@@ -16,20 +26,33 @@ func printCall(asm *os.File, n *Node, k uint32) {
 	fmt.Fprintln(asm, "    call puts")
 	fmt.Fprintln(asm, "    addq $32, %rsp")
 	fmt.Fprintln(asm, "    popq %rbp")
-	printCall(asm, n.c[1], k+1)
+	k++
+	printCall(n.c[1])
+	if len(n.c) == 4 {
+		printCall(n.c[3])
+	}
 }
 
-func printMsg(asm *os.File, n *Node, k uint32) {
+func printMsg(n *Node) {
 	if n.c == nil {
+		return
+	}
+	if len(n.c) != 2 {
+		if len(n.c) == 4 {
+			printMsg(n.c[1])
+			printMsg(n.c[3])
+		}
 		return
 	}
 	fmt.Fprintf(asm, "msg%d:\n", k)
 	fmt.Fprintf(asm, "    .asciz \"%s\"\n", n.c[0].c[0].v.get()[1:])
-	printMsg(asm, n.c[1], k+1)
+	k++
+	printMsg(n.c[1])
 }
 
 func analyzer(n *Node, s string) error {
-	asm, err := os.Create(s + ".s")
+	var err error
+	asm, err = os.Create(s + ".s")
 	if err != nil {
 		return err
 	}
@@ -37,9 +60,14 @@ func analyzer(n *Node, s string) error {
 	fmt.Fprintln(asm, ".global main")
 	fmt.Fprintln(asm, ".extern puts")
 	fmt.Fprintln(asm, "main:")
-	printCall(asm, n, uint32(0))
+	if len(n.c) > 0 {
+		k = uint32(0)
+		printCall(n.c[0])
+	}
 	fmt.Fprintln(asm, "    ret")
-	printMsg(asm, n, uint32(0))
-	asm.Close()
+	if len(n.c) > 0 {
+		k = uint32(0)
+		printMsg(n.c[0])
+	}
 	return nil
 }

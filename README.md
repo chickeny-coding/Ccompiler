@@ -5,15 +5,82 @@ A compiler which compiles `.cl` files.
 
 ## Syntax
 
-The program has several blocks.
+### Program
 
-Every block is one of the following:
+Each program has several blocks.
+
+### Block
+
+Each block has several items and each item can be one of the following:
+
+* An element, which is defined below.
+
+* A block with `{` and `}` around.
+
+Here is several examples for block:
+
+```
+[ Multiple nesting ]
+{
+  {
+    {
+      {
+        nested-text
+      }
+    }
+  }
+}
+[ Nesting for a sentence ]
+{
+  Tip
+  {
+    use
+    {
+      2-space
+      indentation
+      which
+      {
+        symbolizes
+        {
+          binary
+        }
+        {
+          the
+          symbol
+          of
+          {
+            computer
+            science
+          }
+        }
+      }
+      instead
+      of
+      {
+        {
+          other-length-space
+          indentation
+        }
+        or
+        {
+          tab
+          indentation
+        }
+      }
+    }
+  }
+}
+```
+
+### Element
+
+Each element is one of the following:
 
 * A comment, which starts with `[` and ends with `]`. You can write down the comment content between `[` and `]`.
 
 ```cl
-[e.g.]
-[This is a comment]
+[ e.g. ]
+[ This is a comment ]
 [
 Multi
 line
@@ -34,6 +101,16 @@ And this sentence will print itself separated by linefeed.
 ```
 
 > You can also see the `syntax.txt` file in the project.
+
+## Common Styles
+
+### Comments
+
+To make the comment more beautiful (it is just made for this purpose), always add a space between `[` and the comment text, and also between the text and `]`, just like add a space between the text and `//` or `#` in other languages.
+
+### Indentations
+
+Always use 2-space indentations, which symbolizes binary, the symbol of computer science, instead of other-length-space indentations or tab indentations.
 
 ## Usage
 
